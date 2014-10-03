@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <form method="post">
+        <label>
+            <div>{{wiki_title}}<div>
+        </label>
+
+        <label>
+            <textarea name="new_wiki">{{new_wiki}}
+            </textarea>
+        </label>
+
+        <div class="error">{{error}}</div>
+
+        <input type="submit" value="Save">
+    </form>
+{% endblock %}
