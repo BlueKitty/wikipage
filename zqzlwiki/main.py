@@ -40,7 +40,10 @@ class Handler(webapp2.RequestHandler):
 #    title   = db.StringProperty(required = True)
 #    art     = db.TextProperty(required = True)
 #    created = db.DateTimeProperty(auto_now_add = True)
-
+class Wiki_DB(db.Model):
+    title   = db.StringProperty(required = True)
+    content = db.TextProperty(required = True)
+    created = db.DateTimeProperty(auto_now_add = True)
 
 #class MainHandler(Handler):
 #    def render_front(self, title="", art="", error=""):
@@ -64,6 +67,23 @@ class Handler(webapp2.RequestHandler):
 #            error = "we need both a title and some artwork!"
 #            self.render_front(title, art, error)
 
+
+class EditPage(Handler):
+    subject = ""
+
+    def get(self, wiki_title):
+        subject = wiki_title
+        self.render("edit_wiki.html", wiki_title=subject, new_wiki="", error="")
+
+    def post(self):
+        new_wiki = self.request.get("new_wiki")
+        new_sub  = subject
+
+        if new_wiki:
+            wiki = WikiDB(title=new_sub, content=new_wiki)
+            wiki.put()
+
+            self.redirect("/%s" % new_sub)
 
 
 PAGE_RE = r'(/(?:[a-zA-Z0-9_-]+/?)*)'
