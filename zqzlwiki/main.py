@@ -46,9 +46,22 @@ class Wiki_DB(db.Model):
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
 
+user=""
 class WikiPage(Handler):
     def render_front(self, wiki_content=""):
-        self.render("frontpage.html", wiki_content=wiki_content)
+        global user
+        leftString = "login"
+        leftLink = "/Login"
+        rightString = "Signup"
+        rightLink = "/Signup"
+
+        if user:
+            leftString = "edit"
+            leftLink = "/Edit"
+            rightString = "logout"
+            rightLink = "/Logout"
+
+        self.render("frontpage.html", wiki_content=wiki_content, leftString=leftString, leftLink=leftLink, rightString=rightString, rightLink=rightLink)
 
     def get(self, pagename):
         subject = pagename[1:]
