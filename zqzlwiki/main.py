@@ -64,6 +64,13 @@ class Handler(webapp2.RequestHandler):
 #            error = "we need both a title and some artwork!"
 #            self.render_front(title, art, error)
 
-app = webapp2.WSGIApplication([
-                                ('/', MainHandler)
-                              ], debug=True)
+
+
+PAGE_RE = r'(/(?:[a-zA-Z0-9_-]+/?)*)'
+app = webapp2.WSGIApplication([('/signup', Signup),
+                               ('/login', Login),
+                               ('/logout', Logout),
+                               ('/_edit' + PAGE_RE, EditPage),
+                               (PAGE_RE, WikiPage),
+                               ],
+                               debug=True)
