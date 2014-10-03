@@ -64,9 +64,22 @@ class Handler(webapp2.RequestHandler):
 #            error = "we need both a title and some artwork!"
 #            self.render_front(title, art, error)
 
+user=""
 class WikiPage(Handler):
     def render_front(self, wiki_content=""):
-        self.render("frontpage.html", wiki_content=wiki_content)
+        global user
+        leftString = "login"
+        leftLink = "/Login"
+        rightString = "Signup"
+        rightLink = "/Signup"
+
+        if user:
+            leftString = "edit"
+            leftLink = "/Edit"
+            rightString = "logout"
+            rightLink = "/Logout"
+
+        self.render("frontpage.html", wiki_content=wiki_content, leftString=leftString, leftLink=leftLink, rightString=rightString, rightLink=rightLink)
 
     def get(self, pagename):
         self.render_front();
