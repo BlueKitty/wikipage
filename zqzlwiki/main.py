@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from google.appengine.ext import db
+#from google.appengine.ext import db
 
 import webapp2
 import jinja2
@@ -67,6 +67,36 @@ class Wiki_DB(db.Model):
 #            error = "we need both a title and some artwork!"
 #            self.render_front(title, art, error)
 
+class WikiPage(Handler):
+    def render_front(self, wiki_content=""):
+        self.render("frontpage.html", wiki_content=wiki_content)
+
+    def get(self, pagename):
+        self.render_front();
+
+    def post(self):
+        wiki_content = self.request.get("wiki_content")
+        self.render_front(wiki_content)
+
+class Signup(Handler):
+
+    def get(self):
+        pass
+
+class Login(Handler):
+
+    def get(self):
+        pass
+
+class Logout(Handler):
+
+    def get(self):
+        pass
+
+class EditPage(Handler):
+
+    def get(self):
+        pass
 
 class EditPage(Handler):
     subject = ""
@@ -91,6 +121,6 @@ app = webapp2.WSGIApplication([('/signup', Signup),
                                ('/login', Login),
                                ('/logout', Logout),
                                ('/_edit' + PAGE_RE, EditPage),
-                               (PAGE_RE, WikiPage),
+                               (PAGE_RE, WikiPage)
                                ],
                                debug=True)
