@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {{ wiki_content }}
+    {{ wiki_content | safe}}
 
 {% endblock %}

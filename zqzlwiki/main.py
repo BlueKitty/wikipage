@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#from google.appengine.ext import db
+from google.appengine.ext import db
 
 import webapp2
 import jinja2
+import time
 import os
 
 # initialize jinja
@@ -45,34 +46,31 @@ class Wiki_DB(db.Model):
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
 
-#class MainHandler(Handler):
-#    def render_front(self, title="", art="", error=""):
-#        arts = db.GqlQuery("SELECT * FROM Art "
-#                           "ORDER BY created DESC")
-#
-#        self.render("front.html", title=title, art=art, error=error, arts=arts)
-#
-#    def get(self):
-#        self.render_front()
-#    def post(self):
-#        title = self.request.get("title")
-#        art = self.request.get("art")
-#
-#        if title and art:
-#            a = Art(title = title, art = art)
-#            a.put()
-#
-#            self.redirect("/")
-#        else:
-#            error = "we need both a title and some artwork!"
-#            self.render_front(title, art, error)
-
 class WikiPage(Handler):
     def render_front(self, wiki_content=""):
         self.render("frontpage.html", wiki_content=wiki_content)
 
     def get(self, pagename):
-        self.render_front();
+        subject = pagename[1:]
+        wikis = db.GqlQuery("SELECT * FROM Wiki_DB "
+                            "WHERE title=:1", subject)
+
+#        print "pagename is %s, subject is %s" % (pagename, subject)
+#        print '------------------------------------------'
+
+        if pagename != "/" and wikis.get() is None:
+#            print "Cond 1"
+#            print pagename
+#            print wikis.get()
+            self.redirect("/_edit/%s" % subject)
+        elif pagename == "/":
+#            print "Cond 2"
+            self.render_front()
+        else:
+#            print "Cond 3"
+            for w in wikis:
+                self.render_front(wiki_content = w.content)
+                break
 
     def post(self):
         wiki_content = self.request.get("wiki_content")
@@ -99,21 +97,21 @@ class EditPage(Handler):
         pass
 
 class EditPage(Handler):
-    subject = ""
 
     def get(self, wiki_title):
-        subject = wiki_title
+        subject = wiki_title[1:]
         self.render("edit_wiki.html", wiki_title=subject, new_wiki="", error="")
 
-    def post(self):
+    def post(self, title):
+        subject = title[1:]
         new_wiki = self.request.get("new_wiki")
-        new_sub  = subject
-
         if new_wiki:
-            wiki = WikiDB(title=new_sub, content=new_wiki)
+            wiki = Wiki_DB(title=subject, content=new_wiki)
             wiki.put()
 
-            self.redirect("/%s" % new_sub)
+#            print "Redirect to /%s" % subject
+            time.sleep(.1)
+            self.redirect("/%s" % subject)
 
 
 PAGE_RE = r'(/(?:[a-zA-Z0-9_-]+/?)*)'
