@@ -46,20 +46,26 @@ class Wiki_DB(db.Model):
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
 
+class USER_INFO(db.Model):
+    uname = db.StringProperty(required=True)
+    pword = db.StringProperty(required=True)
+    email = db.StringProperty()
+    signDate = db.DateTimeProperty(auto_now_add = True)
+
 user=""
 class WikiPage(Handler):
     def render_front(self, wiki_content=""):
         global user
         leftString = "login"
-        leftLink = "/Login"
-        rightString = "Signup"
-        rightLink = "/Signup"
+        leftLink = "/login"
+        rightString = "signup"
+        rightLink = "/signup"
 
         if user:
             leftString = "edit"
-            leftLink = "/Edit"
+            leftLink = "/edit"
             rightString = "logout"
-            rightLink = "/Logout"
+            rightLink = "/logout"
 
         self.render("frontpage.html", wiki_content=wiki_content, leftString=leftString, leftLink=leftLink, rightString=rightString, rightLink=rightLink)
 
@@ -92,12 +98,60 @@ class WikiPage(Handler):
 class Signup(Handler):
 
     def get(self):
-        pass
+        self.render("signup.html", u_error="", p_error="")
+    def post(self):
+        uname = self.request.get("user_id")
+        pword = self.request.get("password")
+        email = self.request.get("email")
+
+        u_error = ""
+        p_error = ""
+
+        if uname and pword:
+            u = USER_INFO(uname = uname, pword = pword, email = email)
+            u.put()
+            self.redirect("/")
+        else:
+            if uname == "":
+                u_error = "Please give us a user name"
+            if pword == "":
+                p_error = "Please input a valid password"
+            self.render("signup.html",u_error=u_error, p_error=p_error)
 
 class Login(Handler):
 
     def get(self):
-        pass
+        self.render("login.html", u_error="", p_error="")
+
+    def post(self):
+        uname = self.request.get("user_id")
+        pword = self.request.get("password")
+
+        u_error = ""
+        p_error = ""
+
+        if uname == "":
+            u_error = "Please input your user name"
+            self.render("login.html", u_error=u_error, p_error=p_error)
+            return
+        if pword == "":
+            p_error = "Please input your password"
+            self.render("login.html", u_error=u_error, p_error=p_error)
+            return
+
+        u_info = db.GqlQuery("SELECT * FROM USER_INFO "
+                             "WHERE uname = :1", uname)
+        if u_info.get() is None:
+            u_error = "User Name Not Found"
+            self.render("login.html", u_error=u_error, p_error=p_error)
+            return
+        u_pass = u_info.get().pword
+
+        if pword == u_pass:
+            self.redirect("/")
+        else:
+            p_error = "Wrong Password"
+            self.render("login.html", u_error=u_error, p_error=p_error)
 
 class Logout(Handler):
 
