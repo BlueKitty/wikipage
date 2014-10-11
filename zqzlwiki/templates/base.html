@@ -1,31 +1,29 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <style>
-            h1 { text-align: center; }
-            #loginsymbol {
-                display: -webkit-flex;
-                -webkit-align-items: flex-start;
-                display: flex;
-                align-items: flex-start;
-                position: absolute;
-                right: 10px;
-            }
-        </style>
-
         <link type="text/css" rel="stylesheet" href="/static/main.css">
         <title>Wiki Page</title>
     </head>
 
     <body>
-        <div id="loginsymbol">
-            <a href={{leftLink}}>{{leftString}}</a>
-            <a>/</a>
-            <a href={{rightLink}}>{{rightString}}</a>
-        </div>
 
-        <h1>Wiki Page</h1>
-        
+        <table align="center">
+            <tr>
+                <td width=800px>
+                    <div class="main-title">Wiki Page</div>
+                </td>
+
+                <td width=100px style="text-align: right">
+                    <div id="loginsymbol">
+                        <a href={{leftLink}}>{{leftString}}</a>
+                        <a>/</a>
+                        <a href={{rightLink}}>{{rightString}}</a>
+                    </div>
+                </td>
+            </tr>
+
+        </table>
+
         <div id="content">
             {% block content %}
             {% endblock %}
