@@ -31,7 +31,6 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape=True)
 
 #global variables
-user = ""
 secret = "shit"
 
 def render_str(template, **params):
@@ -46,6 +45,12 @@ def check_secure_val(secure_val):
 
 # general handler
 class Handler(webapp2.RequestHandler):
+    def render_front(self, page="frontpage.html", wiki_content="", l_sym_r="", welcome_user=""):
+        self.render(page, wiki_content=wiki_content,
+            leftString=self.leftString, leftLink=self.leftLink,
+            rightString=self.rightString, rightLink=self.rightLink,
+            l_sym_r=l_sym_r, welcome_user=welcome_user)
+
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
 
@@ -76,6 +81,20 @@ class Handler(webapp2.RequestHandler):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
         self.user = uid and USER_INFO.by_id(int(uid))
+        self.set_tag(self.user)
+
+    def set_tag(self, user):
+        self.leftString = "login"
+        self.leftLink = "/login"
+        self.rightString = "signup"
+        self.rightLink = "/signup"
+
+        if self.user:
+            self.leftString = "edit"
+            self.leftLink = "/edit"
+            self.rightString = "logout"
+            self.rightLink = "/logout"
+
 
 # wiki db and user db
 class Wiki_DB(db.Model):
@@ -127,38 +146,59 @@ class USER_INFO(db.Model):
 
 # handlers
 class WikiPage(Handler):
-    def render_front(self, wiki_content=""):
-        leftString = "login"
-        leftLink = "/login"
-        rightString = "signup"
-        rightLink = "/signup"
-
-        if self.user:
-            leftString = "edit"
-            leftLink = "/edit"
-            rightString = "logout"
-            rightLink = "/logout"
-
-        self.render("frontpage.html", wiki_content=wiki_content,
-            leftString=leftString, leftLink=leftLink,
-            rightString=rightString, rightLink=rightLink)
-
     def get(self, pagename):
         subject = pagename[1:]
         wikis = db.GqlQuery("SELECT * FROM Wiki_DB "
                             "WHERE title=:1", subject)
+
+        welcome_user = ""
+        if self.user:
+            welcome_user = "Hi " + self.user.uname
+        else:
+            welcome_user = "Hi Guest"
+
         if pagename != "/" and wikis.get() is None:
             self.redirect("/_edit/%s" % subject)
         elif pagename == "/":
-            self.render_front()
+            self.render_front(page = "frontpage.html",
+                              wiki_content = "",
+                              l_sym_r = "/",
+                              welcome_user = welcome_user)
         else:
             for w in wikis:
-                self.render_front(wiki_content = w.content)
+                self.render_front(page = "frontpage.html",
+                                  wiki_content = w.content,
+                                  l_sym_r = "/",
+                                  welcome_user = welcome_user)
                 break
 
     def post(self):
         wiki_content = self.request.get("wiki_content")
         self.render_front(wiki_content)
+
+# edit page
+class EditPage(Handler):
+
+    def get(self, wiki_title):
+        subject = wiki_title[1:]
+        welcome_user = ""
+        if self.user:
+            welcome_user = "Hi " + self.user.uname
+        else:
+            welcome_user = "Hi Guest"
+
+        self.render_front(page = "edit_wiki.html",
+                          welcome_user = welcome_user)
+
+    def post(self, title):
+        subject = title[1:]
+        new_wiki = self.request.get("new_wiki")
+        if new_wiki:
+            wiki = Wiki_DB(title=subject, content=new_wiki)
+            wiki.put()
+
+            time.sleep(.1)
+            self.redirect("/%s" % subject)
 
 # sign up part
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
@@ -186,7 +226,11 @@ class Signup(Handler):
         u_error = ""
         p_error = ""
 
-        if uname and pword:
+        if USER_INFO.by_name(uname):
+            u_error = "User Already Exist"
+            self.render("signup.html", u_error=u_error)
+
+        elif uname and pword:
             u = USER_INFO.register(uname, pword, email)
             u.put()
 
@@ -242,23 +286,6 @@ class Logout(Handler):
     def get(self):
         self.logout()
         self.redirect('/')
-
-class EditPage(Handler):
-
-    def get(self, wiki_title):
-        subject = wiki_title[1:]
-        self.render("edit_wiki.html", wiki_title=subject, new_wiki="", error="")
-
-    def post(self, title):
-        subject = title[1:]
-        new_wiki = self.request.get("new_wiki")
-        if new_wiki:
-            wiki = Wiki_DB(title=subject, content=new_wiki)
-            wiki.put()
-
-#            print "Redirect to /%s" % subject
-            time.sleep(.1)
-            self.redirect("/%s" % subject)
 
 
 PAGE_RE = r'(/(?:[a-zA-Z0-9_-]+/?)*)'
