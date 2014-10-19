@@ -45,8 +45,8 @@ def check_secure_val(secure_val):
 
 # general handler
 class Handler(webapp2.RequestHandler):
-    def render_front(self, page="frontpage.html", wiki_content="", l_sym_r="", welcome_user=""):
-        self.render(page, wiki_content=wiki_content,
+    def render_front(self, page="frontpage.html", wiki_content="", subject="", l_sym_r="", welcome_user=""):
+        self.render(page, wiki_content=wiki_content, subject=subject,
             leftString=self.leftString, leftLink=self.leftLink,
             rightString=self.rightString, rightLink=self.rightLink,
             l_sym_r=l_sym_r, welcome_user=welcome_user)
@@ -101,6 +101,7 @@ class Wiki_DB(db.Model):
     title   = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
+    user    = db.StringProperty(required = True)
 # user info
 def make_salt(length = 5):
     return ''.join(random.choice(letters) for x in xrange(length))
@@ -157,20 +158,27 @@ class WikiPage(Handler):
         else:
             welcome_user = "Hi Guest"
 
-        if pagename != "/" and wikis.get() is None:
-            self.redirect("/_edit/%s" % subject)
-        elif pagename == "/":
-            self.render_front(page = "frontpage.html",
+        if self.user:
+            if pagename != "/" and wikis.get() is None:
+                self.redirect("/_edit/%s" % subject)
+            elif pagename == "/":
+                self.render_front(page = "frontpage.html",
                               wiki_content = "",
                               l_sym_r = "/",
                               welcome_user = welcome_user)
-        else:
-            for w in wikis:
-                self.render_front(page = "frontpage.html",
+            else:
+                for w in wikis:
+                    self.render_front(page = "frontpage.html",
                                   wiki_content = w.content,
+                                  subject = w.title,
                                   l_sym_r = "/",
                                   welcome_user = welcome_user)
-                break
+                    break
+        else:
+            self.render_front(page="frontpage.html",
+                              wiki_content="",
+                              l_sym_r="/",
+                              welcome_user=welcome_user)
 
     def post(self):
         wiki_content = self.request.get("wiki_content")
@@ -194,7 +202,7 @@ class EditPage(Handler):
         subject = title[1:]
         new_wiki = self.request.get("new_wiki")
         if new_wiki:
-            wiki = Wiki_DB(title=subject, content=new_wiki)
+            wiki = Wiki_DB(title=subject, content=new_wiki, user=self.user.uname)
             wiki.put()
 
             time.sleep(.1)
@@ -227,8 +235,8 @@ class Signup(Handler):
         p_error = ""
 
         if USER_INFO.by_name(uname):
-            u_error = "User Already Exist"
-            self.render("signup.html", u_error=u_error)
+            u_error = "User %s Already Exist" % uname
+            self.render("signup.html", u_error=u_error, uname=uname)
 
         elif uname and pword:
             u = USER_INFO.register(uname, pword, email)
@@ -242,7 +250,7 @@ class Signup(Handler):
                 u_error = "Please give us a user name"
             if pword == "":
                 p_error = "Please input a valid password"
-            self.render("signup.html",u_error=u_error, p_error=p_error)
+            self.render("signup.html",u_error=u_error, p_error=p_error, uname=uname)
 
 class Login(Handler):
 
@@ -268,7 +276,7 @@ class Login(Handler):
         u_info = db.GqlQuery("SELECT * FROM USER_INFO "
                              "WHERE uname = :1", uname)
         if u_info.get() is None:
-            u_error = "User Name Not Found"
+            u_error = "User %s Not Found" % uname
             self.render("login.html", u_error=u_error, p_error=p_error)
             return
 
@@ -279,7 +287,7 @@ class Login(Handler):
             self.redirect("/")
         else:
             p_error = "Wrong Password"
-            self.render("login.html", u_error=u_error, p_error=p_error)
+            self.render("login.html", u_error=u_error, p_error=p_error, uname=uname)
 
 class Logout(Handler):
 
